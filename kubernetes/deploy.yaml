@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: rabbitmq-auto-scaler
+  name: rabbit-hpa
   namespace: default
 rules:
   - apiGroups: ["*"]
@@ -12,38 +12,38 @@ rules:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: rabbitmq-auto-scaler
+  name: rabbit-hpa
   namespace: default
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: rabbitmq-auto-scaler
+  name: rabbit-hpa
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: rabbitmq-auto-scaler
+  name: rabbit-hpa
 subjects:
 - kind: ServiceAccount
-  name: rabbitmq-auto-scaler
+  name: rabbit-hpa
   namespace: default
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: rabbitmq-auto-scaler
+  name: rabbit-hpa
   namespace: default
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: rabbitmq-auto-scaler
+        app: rabbit-hpa
     spec:
-      serviceAccountName: rabbitmq-auto-scaler
+      serviceAccountName: rabbit-hpa
       containers:
-      - name: rabbitmq-auto-scaler
-        image: idobry/rabbitmq-auto-scaler:0.0.051
+      - name: rabbit-hpa
+        image: idobry/rabbit-hpa:0.0.053
         imagePullPolicy: Always
         env:
           - name: NAMESPACE

@@ -1,15 +1,13 @@
 #!/bin/bash
 
-GOOS=linux go build -o ./rabbitmq-auto-scaler .
+GOOS=linux go build -o ./rabbit-hpa .
 
-docker build -t idobry/rabbitmq-auto-scaler:$1 .
+docker build -t idobry/rabbit-hpa:$1 .
 
-docker push idobry/rabbitmq-auto-scaler:$1
+docker push idobry/rabbit-hpa:$1
 
-docker tag idobry/rabbitmq-auto-scaler:$1 idobry/rabbitmq-auto-scaler:latest
+docker tag idobry/rabbit-hpa:$1 idobry/rabbit-hpa:latest
 
-docker push idobry/rabbitmq-auto-scaler:latest
-
-k delete deploy rabbitmq-auto-scaler ; k apply -f kubernetes/deploy.yaml
+docker push idobry/rabbit-hpa:latest
 
 
