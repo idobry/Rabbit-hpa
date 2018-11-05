@@ -1,0 +1,66 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: rabbitmq-auto-scaler
+  namespace: default
+rules:
+  - apiGroups: ["*"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "update"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rabbitmq-auto-scaler
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: rabbitmq-auto-scaler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rabbitmq-auto-scaler
+subjects:
+- kind: ServiceAccount
+  name: rabbitmq-auto-scaler
+  namespace: default
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: rabbitmq-auto-scaler
+  namespace: default
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: rabbitmq-auto-scaler
+    spec:
+      serviceAccountName: rabbitmq-auto-scaler
+      containers:
+      - name: rabbitmq-auto-scaler
+        image: idobry/rabbitmq-auto-scaler:0.0.051
+        imagePullPolicy: Always
+        env:
+          - name: NAMESPACE
+            value: "default"
+          - name: RABBITMQ_MANAGMENT_URL
+            value: "http://rabbitmq-rabbitmq-ha:15672"
+          - name: RABBITMQ_URL
+            value: "rabbitmq-rabbitmq-ha:5672"
+          - name: RABBITMQ_USER
+            value: "user"
+          - name: RABBITMQ_PASSWORD
+            value: "user"
+          - name: INTERVAL
+            value: "30"
+          - name: MIN_POD
+            value: "2"
+          - name: MAX_POD
+            value: "10"
+          - name: MSG_PER_POD
+            value: "5"
