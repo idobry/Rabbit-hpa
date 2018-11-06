@@ -24,6 +24,7 @@ docker build .
 ### Deployment
 
 Rabbit-hpa was built to run inside a kubernetes cluster.
+
 Pay attention to the service environment variables, for example:
 ```
 env:
