@@ -19,17 +19,16 @@ import (
 )
 
 const (
-	not_found = "not found"
+	notFound = "not found"
 )
 
 var (
-	RabbitmqUrl = fmt.Sprintf("amqp://%s:%s@%s", os.Getenv("RABBITMQ_USER"), os.Getenv("RABBITMQ_PASSWORD"), os.Getenv("RABBITMQ_URL"))
+	rabbitmqUrl  = fmt.Sprintf("amqp://%s:%s@%s", os.Getenv("RABBITMQ_USER"), os.Getenv("RABBITMQ_PASSWORD"), os.Getenv("RABBITMQ_URL"))
+	minPods, _   = strconv.Atoi(os.Getenv("MIN_POD"))
+	maxPods, _   = strconv.Atoi(os.Getenv("MAX_POD"))
+	msgPerPod, _ = strconv.Atoi(os.Getenv("MSG_PER_POD"))
+	interval, _ := strconv.Atoi(os.Getenv("INTERVAL"))
 )
-
-type TopicsList struct {
-	Name  string `json:name`
-	VHost string `json:vhost`
-}
 
 type Queues struct {
 	Arguments struct {
@@ -54,14 +53,8 @@ type Queues struct {
 }
 
 func main() {
-	i, err := strconv.Atoi(os.Getenv("INTERVAL"))
-	if err != nil {
-		// handle error
-		fmt.Println(err)
-		os.Exit(2)
-	}
-	fmt.Printf("\n\n*********** Connecting to Rabbimq at %s ***********\n", RabbitmqUrl)
-	conn, _ := amqp.Dial(RabbitmqUrl)
+	fmt.Printf("\n\n*********** Connecting to Rabbimq at %s ***********\n", rabbitmqUrl)
+	conn, _ := amqp.Dial(rabbitmqUrl)
 	defer conn.Close()
 
 	// create a channel
@@ -73,6 +66,7 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+
 	// creates the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -83,28 +77,22 @@ func main() {
 		for _, q := range queues {
 			Run(q, ch, clientset)
 		}
-		time.Sleep(time.Duration(int(time.Second) * int(i)))
+		time.Sleep(time.Duration(int(time.Second) * int(interval)))
 	}
 }
 
 func Run(q Queues, ch *amqp.Channel, clientset *kubernetes.Clientset) {
-
-	minPods, _ := strconv.Atoi(os.Getenv("MIN_POD"))
-	maxPods, _ := strconv.Atoi(os.Getenv("MAX_POD"))
-	msgPerPod, _ := strconv.Atoi(os.Getenv("MSG_PER_POD"))
-
 	// get ready queue msgs count
 	queue, err := ch.QueueInspect(q.Queue.Name)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	numToScale := GetScaleCount(queue.Messages, msgPerPod, minPods, maxPods)
+	numToScale := GetScaleCount(queue.Messages)
 
 	ScaleDeployment(clientset, "default", GetDeploymentName(clientset, q.ChannelDetails.PeerHost), numToScale)
 }
 
 func GetQueues() []Queues {
-
 	manager := os.Getenv("RABBITMQ_MANAGMENT_URL") + "/api/consumers/"
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", manager, nil)
@@ -134,11 +122,11 @@ func GetDeploymentName(clientset *kubernetes.Clientset, podIP string) string {
 			return strings.Join(strings.Split(pod.Name, delimiter)[:(strings.Count(pod.Name, delimiter)-1)], delimiter)
 		}
 	}
-	return not_found
+	return notFound
 }
 
 func ScaleDeployment(clientset *kubernetes.Clientset, namespace string, deploymentName string, numToScale int) {
-	if deploymentName != not_found {
+	if deploymentName != notFound {
 		deploymentsClient := clientset.AppsV1().Deployments(namespace)
 		deployment, err := deploymentsClient.Get(deploymentName, metav1.GetOptions{})
 		if errors.IsNotFound(err) {
@@ -172,8 +160,7 @@ func ScaleDeployment(clientset *kubernetes.Clientset, namespace string, deployme
 	}
 }
 
-func GetScaleCount(currentMsgInQueue int, msgPerPod int, minPods int, maxPods int) int {
-
+func GetScaleCount(currentMsgInQueue int) int {
 	if currentMsgInQueue >= (msgPerPod * maxPods) {
 		return maxPods
 	}
