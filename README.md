@@ -25,8 +25,29 @@ docker build .
 
 Rabbit-hpa was built to run inside a kubernetes cluster.
 
-Say what the step will be
-
+Pay attention to the service environment variables, for example:
+```
+env:
+  - name: NAMESPACE
+    value: "default"
+  - name: RABBITMQ_MANAGMENT_URL
+    value: "http://rabbitmq-rabbitmq-ha:15672"
+  - name: RABBITMQ_URL
+    value: "rabbitmq-rabbitmq-ha:5672"
+  - name: RABBITMQ_USER
+    value: "user"
+  - name: RABBITMQ_PASSWORD
+    value: "user"
+  - name: INTERVAL
+    value: "30"
+  - name: MIN_POD
+    value: "2"
+  - name: MAX_POD
+    value: "10"
+  - name: MSG_PER_POD
+    value: "5"
+```
+Deploy:
 ```
 kubectl apply -f ./kubernetes
 ```
