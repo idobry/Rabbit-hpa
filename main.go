@@ -27,7 +27,7 @@ var (
 	minPods, _   = strconv.Atoi(os.Getenv("MIN_POD"))
 	maxPods, _   = strconv.Atoi(os.Getenv("MAX_POD"))
 	msgPerPod, _ = strconv.Atoi(os.Getenv("MSG_PER_POD"))
-	interval, _ := strconv.Atoi(os.Getenv("INTERVAL"))
+	interval, _  = strconv.Atoi(os.Getenv("INTERVAL"))
 )
 
 type Queues struct {
