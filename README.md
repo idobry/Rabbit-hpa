@@ -25,8 +25,6 @@ docker build .
 
 Rabbit-hpa was built to run inside a kubernetes cluster.
 
-Say what the step will be
-
 ```
 kubectl apply -f ./kubernetes
 ```
